@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101914">
+<title>Match Clip — Protótipo</title>
+<style>
+:root{color-scheme:dark;--bg:#101914;--panel:#19251e;--line:#304238;--text:#f2f7f3;--muted:#a9b9ae;--green:#79e0a0;--orange:#ffb45e;--red:#ff7373}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:900px;margin:auto;padding:18px 14px 40px}header{display:flex;align-items:center;gap:12px;margin:4px 0 18px}
+.logo{width:46px;height:46px;border-radius:13px;background:var(--green);color:#102017;display:grid;place-items:center;font-weight:900;font-size:21px}
+h1{font-size:24px;margin:0}header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}
+h2{font-size:17px;margin:0 0 12px}.video-wrap{position:relative;background:#050806;border-radius:12px;overflow:hidden;aspect-ratio:16/9;display:grid;place-items:center}
+video{display:block;width:100%;max-height:68vh;background:#050806;object-fit:contain}.video-wrap video{height:100%;position:absolute;inset:0}
+.placeholder{color:var(--muted);text-align:center;padding:20px}.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:#7e8d83;display:inline-block}.dot.live{background:var(--red);box-shadow:0 0 0 4px #ff737322}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button,.file-button{border:0;border-radius:11px;padding:12px 14px;font-weight:750;font-size:14px;cursor:pointer;background:var(--green);color:#102017}
+button.secondary,.file-button.secondary{background:#2a3a30;color:var(--text);border:1px solid #405449}
+button.orange{background:var(--orange);color:#2c1b07}button.danger{background:#5a2729;color:#ffe5e5;border:1px solid #8e4447}
+button:disabled{opacity:.4;cursor:not-allowed}
+input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;background:#101914;color:var(--text);padding:11px;margin:0 0 8px}
+.small{font-size:13px;color:var(--muted)}.notice{border-left:3px solid var(--orange);padding:9px 12px;background:#ffb45e12;color:#f5d7b1;border-radius:0 8px 8px 0;font-size:13px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.list{display:grid;gap:9px}.item{padding:11px;border:1px solid var(--line);border-radius:11px;display:flex;gap:12px;justify-content:space-between;align-items:center}
+.item strong{display:block}.item .meta{font-size:12px;color:var(--muted)}.item .actions{display:flex;gap:6px;flex-wrap:wrap}.item button{padding:8px 10px;font-size:12px}
+.clip-video{width:100%;max-height:320px;border-radius:10px;background:#050806;margin-top:8px}
+progress{width:100%;height:8px;accent-color:var(--green)}.hidden{display:none!important}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:12px}
+@media(min-width:700px){main{padding:26px 20px 50px}.panel{padding:18px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">MC</div><div><h1>Match Clip</h1><p>Protótipo de teste · gravação e marcação de lances</p></div></header>
+
+<section class="panel">
+  <h2>1. Câmara</h2>
+  <div class="video-wrap" id="cameraWrap">
+    <div class="placeholder" id="cameraPlaceholder">Ativa a câmara para começar.<br><span class="small">Mantém o telemóvel desbloqueado durante o teste.</span></div>
+    <video id="camera" autoplay muted playsinline class="hidden"></video>
+  </div>
+  <div class="status"><span class="dot" id="recordDot"></span><span id="recordState">Não está a gravar</span><span>·</span><span id="elapsed">00:00:00</span></div>
+  <div class="status" id="cameraInfo">Resolução e FPS reais aparecerão aqui depois de ativar a câmara.</div>
+  <div class="controls">
+    <button id="openCamera">Ativar câmara</button>
+    <button id="startRecording" disabled>● Iniciar gravação</button>
+    <button id="stopRecording" class="danger" disabled>■ Parar gravação</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>2. Marcar um lance</h2>
+  <input id="eventLabel" type="text" maxlength="60" placeholder="Ex.: Recuperação alta, ocasião de golo, bola parada">
+  <button id="markEvent" class="orange" disabled>＋ Marcar lance</button>
+  <p class="small">Cada marcação guarda o momento do jogo. A ideia do clip é incluir 10 segundos antes e 15 segundos depois.</p>
+  <div class="list" id="eventsList"><div class="small">Ainda não existem lances marcados.</div></div>
+</section>
+
+<section class="panel">
+  <h2>3. Gravação e clips</h2>
+  <p class="small">Quando parares a gravação, podes guardar o vídeo completo e tentar gerar clips a partir dos momentos marcados. A criação de cada clip reproduz o intervalo em tempo real, por isso um clip de 25 segundos pode demorar cerca de 25 segundos a ser criado.</p>
+  <div class="controls">
+    <button id="downloadFull" class="secondary" disabled>Descarregar vídeo completo</button>
+    <button id="makeClips" disabled>Gerar clips marcados</button>
+  </div>
+  <progress id="clipProgress" class="hidden" max="100" value="0"></progress>
+  <p id="clipStatus" class="small"></p>
+  <div class="list" id="clipsList"></div>
+</section>
+
+<section class="panel">
+  <h2>Limitações deste protótipo</h2>
+  <div class="notice">Esta é uma prova de conceito no navegador, não a versão final para um jogo completo. A gravação longa pode ocupar muita memória, a criação de clips depende do suporte do navegador e o telefone pode interromper a gravação se bloquear ou ficar sem recursos. Ainda não está validado 1080p/60 fps nem o funcionamento em iPhone.</div>
+  <p class="small">Testa primeiro com um vídeo curto de 1–2 minutos. Não uses ainda para gravar um jogo oficial sem confirmares que o ficheiro final é reproduzível.</p>
+</section>
+<footer>Match Clip · Protótipo local. Os vídeos ficam no dispositivo/navegador até serem descarregados; não são enviados para um servidor.</footer>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const camera = $('camera');
+  let stream = null, recorder = null, chunks = [], fullBlob = null, fullUrl = null;
+  let startedAt = 0, timer = null, isRecording = false, eventCounter = 0;
+  const events = [], clips = [];
+  const supportsCaptureStream = HTMLMediaElement.prototype.captureStream || HTMLMediaElement.prototype.mozCaptureStream;
+
+  function timeText(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = String(Math.floor(total / 3600)).padStart(2,'0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2,'0');
+    const s = String(total % 60).padStart(2,'0');
+    return `${h}:${m}:${s}`;
+  }
+  function elapsedMs(){ return isRecording ? performance.now() - startedAt : 0; }
+  function setStatus(text){ $('clipStatus').textContent = text; }
+  function getMimeType(){
+    const types = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+    return types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  }
+  async function openCamera(){
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Este navegador não disponibiliza acesso à câmara. Abre o site através de HTTPS no Chrome.');
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } }
+      });
+      camera.srcObject = stream;
+      camera.classList.remove('hidden'); $('cameraPlaceholder').classList.add('hidden');
+      await camera.play();
+      const track = stream.getVideoTracks()[0], s = track.getSettings ? track.getSettings() : {};
+      $('cameraInfo').textContent = `Câmara: ${s.width || '?'}×${s.height || '?'} · FPS reportados: ${s.frameRate || 'não indicado'} · Áudio: ${stream.getAudioTracks().length ? 'sim' : 'não'}`;
+      $('startRecording').disabled = false;
+      $('openCamera').textContent = 'Câmara ativa';
+      $('openCamera').disabled = true;
+    } catch (e) {
+      alert('Não foi possível ativar a câmara: ' + (e.message || e) + '\\nConfirma as permissões do navegador e abre a página por HTTPS.');
+    }
+  }
+  function renderEvents(){
+    const root = $('eventsList');
+    if (!events.length) { root.innerHTML = '<div class="small">Ainda não existem lances marcados.</div>'; return; }
+    root.innerHTML = '';
+    events.forEach(ev => {
+      const div = document.createElement('div'); div.className = 'item';
+      const info = document.createElement('div');
+      const title = document.createElement('strong'); title.textContent = ev.label;
+      const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `Lance ${ev.n} · ${timeText(ev.ms)} · intervalo previsto ${timeText(Math.max(0,ev.ms-10000))}–${timeText(ev.ms+15000)}`;
+      info.append(title,meta); div.append(info); root.append(div);
+    });
+  }
+  function renderClips(){
+    const root = $('clipsList'); root.innerHTML = '';
+    clips.forEach((clip, i) => {
+      const div = document.createElement('div'); div.className = 'item'; div.style.display = 'block';
+      const row = document.createElement('div'); row.className = 'row';
+      const name = document.createElement('strong'); name.textContent = clip.label;
+      const a = document.createElement('a'); a.href = clip.url; a.download = `match-clip-${String(i+1).padStart(2,'0')}.webm`; a.textContent = 'Descarregar clip'; a.style.color = '#79e0a0'; a.style.fontWeight = '700';
+      row.append(name,a);
+      const v = document.createElement('video'); v.className = 'clip-video'; v.controls = true; v.playsInline = true; v.src = clip.url;
+      div.append(row,v); root.append(div);
+    });
+  }
+  function startRecording(){
+    if (!stream || !window.MediaRecorder) { alert('Este navegador não suporta MediaRecorder para esta câmara.'); return; }
+    const mimeType = getMimeType();
+    try {
+      recorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
+    } catch(e) { alert('Não foi possível iniciar a gravação: ' + e.message); return; }
+    chunks = []; events.length = 0; clips.forEach(c => URL.revokeObjectURL(c.url)); clips.length = 0; renderEvents(); renderClips();
+    fullBlob = null; if(fullUrl) URL.revokeObjectURL(fullUrl); fullUrl = null;
+    $('downloadFull').disabled = true; $('makeClips').disabled = true;
+    recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    recorder.onerror = e => setStatus('Erro de gravação: ' + (e.error?.message || 'desconhecido'));
+    recorder.onstop = () => {
+      fullBlob = new Blob(chunks, {type: recorder.mimeType || 'video/webm'});
+      fullUrl = URL.createObjectURL(fullBlob);
+      $('downloadFull').disabled = false;
+      $('makeClips').disabled = events.length === 0;
+      $('recordState').textContent = 'Gravação terminada';
+      $('recordDot').classList.remove('live');
+      setStatus(`Vídeo pronto (${(fullBlob.size/1024/1024).toFixed(1)} MB). Descarrega uma cópia para o dispositivo.`);
+    };
+    recorder.start(1000);
+    startedAt = performance.now(); isRecording = true;
+    timer = setInterval(() => $('elapsed').textContent = timeText(elapsedMs()), 250);
+    $('recordState').textContent = 'A gravar';
+    $('recordDot').classList.add('live');
+    $('startRecording').disabled = true; $('stopRecording').disabled = false; $('markEvent').disabled = false; $('openCamera').disabled = true;
+    setStatus('Gravação em curso. Mantém a página aberta e o ecrã ativo.');
+  }
+  function stopRecording(){
+    if (!recorder || recorder.state === 'inactive') return;
+    isRecording = false; clearInterval(timer);
+    $('elapsed').textContent = timeText(performance.now() - startedAt);
+    $('stopRecording').disabled = true; $('markEvent').disabled = true;
+    $('recordState').textContent = 'A finalizar ficheiro…';
+    recorder.stop();
+    $('startRecording').disabled = true;
+  }
+  function markEvent(){
+    if(!isRecording) return;
+    const label = $('eventLabel').value.trim() || 'Lance sem descrição';
+    events.push({n:++eventCounter,label,ms:performance.now()-startedAt});
+    renderEvents(); $('eventLabel').value = '';
+  }
+  function downloadBlob(blob, filename){
+    const a = document.createElement('a'); const url = URL.createObjectURL(blob);
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }
+  async function generateOneClip(ev, index){
+    if (!supportsCaptureStream) throw new Error('Este navegador não suporta captura do vídeo reproduzido (captureStream). Tenta no Chrome para Android ou num navegador Chromium atualizado.');
+    const video = document.createElement('video');
+    video.src = fullUrl; video.muted = false; video.playsInline = true; video.preload = 'auto';
+    video.style.position = 'fixed'; video.style.width = '2px'; video.style.height = '2px'; video.style.opacity = '0.01'; video.style.left = '-10px'; document.body.appendChild(video);
+    try {
+      await new Promise((resolve,reject)=>{ video.onloadedmetadata=resolve; video.onerror=()=>reject(new Error('Não foi possível abrir o vídeo gravado para cortar.')); video.load(); });
+      const start = Math.max(0, ev.ms/1000 - 10);
+      const end = Math.min(video.duration || (ev.ms/1000+15), ev.ms/1000 + 15);
+      if (!(end > start)) throw new Error('Intervalo de clip inválido.');
+      video.currentTime = start;
+      await new Promise(resolve => { video.onseeked=resolve; });
+      const capture = (video.captureStream || video.mozCaptureStream).call(video);
+      const mimeType = getMimeType();
+      const clipRecorder = new MediaRecorder(capture, mimeType ? {mimeType} : undefined);
+      const pieces = [];
+      clipRecorder.ondataavailable = e => { if(e.data && e.data.size) pieces.push(e.data); };
+      const finished = new Promise((resolve,reject)=>{
+        clipRecorder.onstop=()=>resolve(new Blob(pieces,{type:clipRecorder.mimeType || 'video/webm'}));
+        clipRecorder.onerror=()=>reject(new Error('Erro durante a criação do clip.'));
+      });
+      clipRecorder.start(500);
+      await video.play();
+      await new Promise((resolve,reject)=>{
+        const check=()=>{ if(video.currentTime >= end || video.ended){video.pause();resolve();} else requestAnimationFrame(check); };
+        video.onerror=()=>reject(new Error('Erro de reprodução ao criar clip.'));
+        check();
+      });
+      clipRecorder.stop();
+      const blob = await finished;
+      capture.getTracks().forEach(t=>t.stop());
+      if (!blob.size) throw new Error('O clip gerado está vazio.');
+      return {label:`${ev.label} · ${timeText(start*1000)}–${timeText(end*1000)}`,url:URL.createObjectURL(blob),blob};
+    } finally { video.pause(); video.removeAttribute('src'); video.load(); video.remove(); }
+  }
+  async function generateClips(){
+    if(!fullBlob || !events.length) return;
+    $('makeClips').disabled = true; $('clipProgress').classList.remove('hidden'); $('clipProgress').value = 0;
+    try {
+      for(let i=0;i<events.length;i++){
+        setStatus(`A criar clip ${i+1} de ${events.length}. O vídeo está a ser reproduzido para extrair o intervalo…`);
+        const clip = await generateOneClip(events[i],i);
+        clips.push(clip); renderClips(); $('clipProgress').value = Math.round((i+1)/events.length*100);
+      }
+      setStatus(`Concluído: ${clips.length} clip(s). Reproduz e descarrega os clips abaixo.`);
+    } catch(e) {
+      setStatus('Não foi possível gerar os clips: ' + e.message);
+      alert('A criação de clips falhou. O vídeo completo continua disponível para descarregar. Detalhe: ' + e.message);
+    } finally { $('makeClips').disabled = false; }
+  }
+  $('openCamera').addEventListener('click',openCamera);
+  $('startRecording').addEventListener('click',startRecording);
+  $('stopRecording').addEventListener('click',stopRecording);
+  $('markEvent').addEventListener('click',markEvent);
+  $('eventLabel').addEventListener('keydown',e=>{if(e.key==='Enter' && isRecording)markEvent();});
+  $('downloadFull').addEventListener('click',()=>{if(fullBlob)downloadBlob(fullBlob,'match-clip-gravacao-completa.webm');});
+  $('makeClips').addEventListener('click',generateClips);
+  window.addEventListener('beforeunload',e=>{if(isRecording){e.preventDefault();e.returnValue='';}});
+})();
+</script>
+</body>
+</html>
